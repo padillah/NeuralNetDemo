@@ -316,9 +316,9 @@ namespace FeedForwardDemo
 
             responseMatrix = new MatrixLite(firstOperand.RowCount, secondOperand.ColumnCount);
 
-            for (int i = 1; i <= firstOperand.RowCount; i++)
+            for (int i = 0; i < firstOperand.RowCount; i++)
             {
-                for (int j = 1; j <= secondOperand.ColumnCount; j++)
+                for (int j = 0; j < secondOperand.ColumnCount; j++)
                 {
                     responseMatrix[i, j] = Dot(firstOperand.Row(i), secondOperand.Column(j));
                 }
@@ -354,8 +354,8 @@ namespace FeedForwardDemo
 
                     //    columnCount = i;
                     //}
-                    
-                    matrixValues[0, rowIndex-1] = value;
+
+                    matrixValues[0, rowIndex] = value;
                 }
                 else if (ColumnCount == 1)
                 {
@@ -376,7 +376,7 @@ namespace FeedForwardDemo
                     //    rowCount = i; // ha!
                     //}
 
-                    matrixValues[rowIndex - 1, 0] = value;
+                    matrixValues[rowIndex, 0] = value;
                 }
                 else
                     throw new InvalidOperationException("Cannot access multidimensional matrix via single index.");
@@ -385,12 +385,12 @@ namespace FeedForwardDemo
             {
                 if (this.RowCount == 1) // row vector
                 {
-                    return matrixValues[0,rowIndex - 1];
+                    return matrixValues[0, rowIndex];
                 }
 
                 if (this.ColumnCount == 1) // coumn vector
                 {
-                    return matrixValues[rowIndex - 1,0];
+                    return matrixValues[rowIndex, 0];
                 }
 
                 throw new InvalidOperationException("General matrix acces requires double indexing.");
@@ -401,7 +401,7 @@ namespace FeedForwardDemo
         {
             set
             {
-                if (rowIndex <= 0 || columnIndex <= 0)
+                if (rowIndex < 0 || columnIndex < 0)
                     throw new ArgumentOutOfRangeException("Indices must be real positive.");
 
                 //TODO: Implement dynamic sizing
@@ -437,14 +437,14 @@ namespace FeedForwardDemo
                 //    columnCount = columnIndex;
                 //}
 
-                matrixValues[rowIndex - 1, columnIndex - 1] = value;
+                matrixValues[rowIndex, columnIndex] = value;
             }
 
             get
             {
-                if (rowIndex > 0 && rowIndex <= RowCount && columnIndex > 0 && columnIndex <= ColumnCount)
+                if (rowIndex >= 0 && rowIndex < RowCount && columnIndex >= 0 && columnIndex < ColumnCount)
                 {
-                    return matrixValues[rowIndex - 1, columnIndex - 1];
+                    return matrixValues[rowIndex, columnIndex];
                 }
                 else
                     throw new ArgumentOutOfRangeException("Indices must not exceed size of matrix.");
@@ -460,7 +460,7 @@ namespace FeedForwardDemo
         {
             MatrixLite buf = new MatrixLite(this.RowCount, 1);
 
-            for (int i = 1; i <= this.RowCount; i++)
+            for (int i = 0; i < this.RowCount; i++)
             {
                 buf[i] = matrixValues[i, j];
             }
@@ -475,14 +475,14 @@ namespace FeedForwardDemo
         /// <returns>i-th row...</returns>
         public MatrixLite Row(int i)
         {
-            if (i <= 0 || i > RowCount)
+            if (i < 0 || i > RowCount)
                 throw new ArgumentException("Index exceed matrix dimension.");
 
             //return (new Matrix((Complex[])((ArrayList)Values[i - 1]).ToArray(typeof(Complex)))).Transpose();
 
             MatrixLite buf = new MatrixLite(ColumnCount, 1);
 
-            for (int j = 1; j <= this.ColumnCount; j++)
+            for (int j = 0; j < this.ColumnCount; j++)
             {
                 buf[j] = matrixValues[i, j];
             }
@@ -528,7 +528,7 @@ namespace FeedForwardDemo
 
             double buf = 0;
 
-            for (int i = 1; i <= m; i++)
+            for (int i = 0; i < m; i++)
             {
                 buf += operandOne[i] * operandTwo[i];
             }
