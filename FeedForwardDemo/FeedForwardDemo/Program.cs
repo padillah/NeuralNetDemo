@@ -325,6 +325,40 @@ namespace FeedForwardDemo
             }
 
             return null;
+
+        public static MatrixLite operator +(MatrixLite A, MatrixLite B)
+        {
+
+            if (A.RowCount != B.RowCount || A.ColumnCount != B.ColumnCount)
+                throw new ArgumentException("Matrices must be of the same dimension.");
+
+            for (int i = 0; i < A.RowCount; i++)
+            {
+                for (int j = 0; j < A.ColumnCount; j++)
+                {
+                    A[i, j] += B[i, j];
+                }
+            }
+
+            return A;
+        }
+
+        public static implicit operator double[](MatrixLite operatorOne)
+        {
+            if (operatorOne.RowCount > 1)
+            {
+                throw new InvalidOperationException("Cannot implicitly cast multidimmesional MatrixLite. MatrixLite has more than one row.");
+            }
+
+            double[] buf = new double[operatorOne.ColumnCount];
+
+            for (int j = 0; j < operatorOne.ColumnCount; j++)
+            {
+                buf[j] = operatorOne.matrixValues[0, j];
+            }
+
+            return buf;
+
         }
 
         private void SetValue(int row, int column, double value)
