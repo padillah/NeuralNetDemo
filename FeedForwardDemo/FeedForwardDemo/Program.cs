@@ -59,7 +59,8 @@ namespace FeedForwardDemo
                 if (i % valsPerRow == 0) Console.WriteLine("");
                 Console.Write(vector[i].ToString($"F{decimals}").PadLeft(decimals + 4) + " ");
             }
-            if (newLine == true) Console.WriteLine("");
+
+            if (newLine) Console.WriteLine("");
         }
 
     } // Program
@@ -324,7 +325,8 @@ namespace FeedForwardDemo
                 }
             }
 
-            return null;
+            return responseMatrix;
+        }
 
         public static MatrixLite operator +(MatrixLite A, MatrixLite B)
         {
@@ -480,8 +482,8 @@ namespace FeedForwardDemo
                 {
                     return matrixValues[rowIndex, columnIndex];
                 }
-                else
-                    throw new ArgumentOutOfRangeException("Indices must not exceed size of matrix.");
+
+                throw new ArgumentOutOfRangeException("Indices must not exceed size of matrix.");
             }
         }
 
