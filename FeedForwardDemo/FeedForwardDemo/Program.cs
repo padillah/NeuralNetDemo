@@ -34,7 +34,7 @@ namespace FeedForwardDemo
             ShowVector(weights, 8, 2, true);
             nn.SetWeights(weights);
 
-            double[] xValues = new double[] { 1.0, 2.0, 3.0 };
+            double[] xValues = new double[] {1.0, 2.0, 3.0};
             var inputMatrix = new MatrixLite(xValues, 1, 3, 0);
 
             Console.WriteLine("Inputs are:");
@@ -61,6 +61,7 @@ namespace FeedForwardDemo
             }
             if (newLine == true) Console.WriteLine("");
         }
+
     } // Program
 
     public class NeuralNetwork
@@ -167,6 +168,7 @@ namespace FeedForwardDemo
 
             double[] hSums = new double[numHidden];
             double[] oSums = new double[numOutput];
+
             for (int i = 0; i < xValues.Length; ++i)
             {
                 inputs[i] = xValues[i];
@@ -436,8 +438,8 @@ namespace FeedForwardDemo
                 //}
 
                 matrixValues[rowIndex - 1, columnIndex - 1] = value;
-
             }
+
             get
             {
                 if (rowIndex > 0 && rowIndex <= RowCount && columnIndex > 0 && columnIndex <= ColumnCount)
