@@ -179,6 +179,7 @@ namespace FeedForwardDemo
 
             var sumMatrix = inputMatrix * inputToHiddenMatrix;
 
+            //NOT NEEDED ~~
             for (int j = 0; j < numHidden; ++j)
             {
                 for (int i = 0; i < numInput; ++i)
@@ -186,12 +187,22 @@ namespace FeedForwardDemo
                     hSums[j] += inputs[i] * ihWeights[i][j];
                 }
             }
+            //NOT NEEDED ^^
+
+            var hiddenResultMatrix = sumMatrix + HiddenBiasMatrix;
+
+            //NOT NEEDED ~~
             for (int i = 0; i < numHidden; ++i)
             {
                 hSums[i] += hBiases[i];
             }
+            //NOT NEEDED^^
+
             Console.WriteLine("Pre-activation hidden sums:");
-            FeedForwardProgram.ShowVector(hSums, 4, 4, true);
+            FeedForwardProgram.ShowVector(hSums, 4, 4, false); // <-- NOT NEEDED
+            FeedForwardProgram.ShowVector(hiddenResultMatrix, 4, 4, true);
+
+
             for (int i = 0; i < numHidden; ++i)
             {
                 hOutputs[i] = HyperTan(hSums[i]);
