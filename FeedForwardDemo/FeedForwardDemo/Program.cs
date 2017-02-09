@@ -34,14 +34,13 @@ namespace FeedForwardDemo
             ShowVector(weights, 8, 2, true);
             nn.SetWeights(weights);
 
-            double[] xValues = new double[] {1.0, 2.0, 3.0};
-            var inputMatrix = new MatrixLite(xValues, 1, 3, 0);
+            double[] xValues = new double[] { 1.0, 2.0, 3.0 };
 
             Console.WriteLine("Inputs are:");
             ShowVector(xValues, 3, 1, true);
 
             Console.WriteLine("Computing outputs");
-            double[] yValues = nn.ComputeOutputs(xValues, inputMatrix);
+            double[] yValues = nn.ComputeOutputs(xValues);
 
             Console.WriteLine("Outputs computed");
 
@@ -73,34 +72,45 @@ namespace FeedForwardDemo
         private double[] inputs;
         private double[][] ihWeights;
         private double[] hBiases;
-        private double[] hOutputs;
+        private double[] hResults;
         private double[][] hoWeights;
         private double[] oBiases;
         private double[] outputs;
 
+        private MatrixLite inputsMatrix;
         private MatrixLite inputToHiddenMatrix;
         private MatrixLite HiddenBiasMatrix;
+        private MatrixLite HiddenResultsMatrix;
         private MatrixLite HiddenToOutputMatrix;
-        private MatrixLite OutputMatrix;
-
+        private MatrixLite OutputBiasMatrix;
+        private MatrixLite outputResultsMatrix;
 
         public NeuralNetwork(int numInput, int numHidden, int numOutput)
         {
             this.numInput = numInput;
             this.numHidden = numHidden;
             this.numOutput = numOutput;
-            this.inputs = new double[numInput];
-            this.ihWeights = MakeMatrix(numInput, numHidden);
-            this.hBiases = new double[numHidden];
-            this.hOutputs = new double[numHidden];
-            this.hoWeights = MakeMatrix(numHidden, numOutput);
-            this.oBiases = new double[numOutput];
-            this.outputs = new double[numOutput];
 
+            this.inputs = new double[numInput];
+            inputsMatrix = new MatrixLite(1, numInput);
+
+            this.ihWeights = MakeMatrix(numInput, numHidden);
             inputToHiddenMatrix = new MatrixLite(numInput, numHidden);
+
+            this.hBiases = new double[numHidden];
             HiddenBiasMatrix = new MatrixLite(1, numHidden);
+
+            this.hResults = new double[numHidden];
+            HiddenResultsMatrix = new MatrixLite(1, numHidden);
+
+            this.hoWeights = MakeMatrix(numHidden, numOutput);
             HiddenToOutputMatrix = new MatrixLite(numHidden, numOutput);
-            OutputMatrix = new MatrixLite(1, numOutput);
+
+            this.oBiases = new double[numOutput];
+            OutputBiasMatrix = new MatrixLite(1, numOutput);
+
+            this.outputs = new double[numOutput];
+            outputResultsMatrix = new MatrixLite(1, numOutput);
         }
 
         private static double[][] MakeMatrix(int rows, int cols)
@@ -154,15 +164,17 @@ namespace FeedForwardDemo
             }
 
             Console.WriteLine("Set output biases");
-            OutputMatrix.SetValues(weights, (numInput * numHidden * numOutput));
+            OutputBiasMatrix.SetValues(weights, (numInput * numHidden * numOutput));
             for (int outputBias = 0; outputBias < numOutput; ++outputBias)
             {
                 Console.WriteLine($"Output bias {outputBias} = {weights[weightIndex]}");
                 oBiases[outputBias] = weights[weightIndex++];
             }
+
+
         }
 
-        public double[] ComputeOutputs(double[] xValues, MatrixLite inputMatrix)
+        public double[] ComputeOutputs(double[] xValues)
         {
             if (xValues.Length != numInput)
                 throw new Exception("Bad xValues array");
@@ -170,14 +182,16 @@ namespace FeedForwardDemo
             double[] hSums = new double[numHidden];
             double[] oSums = new double[numOutput];
 
+            inputsMatrix = new MatrixLite(xValues);
             for (int i = 0; i < xValues.Length; ++i)
             {
                 inputs[i] = xValues[i];
             }
+
             // ex: hSum[ 0] = (in[ 0] * ihW[[ 0][ 0]) + (in[ 1] * ihW[ 1][ 0]) + (in[ 2] * ihW[ 2][ 0]) + . . 
             // hSum[ 1] = (in[ 0] * ihW[[ 0][ 1]) + (in[ 1] * ihW[ 1][ 1]) + (in[ 2] * ihW[ 2][ 1]) + . . // . . .
 
-            var sumMatrix = inputMatrix * inputToHiddenMatrix;
+           var hiddenSumMatrix = inputsMatrix * inputToHiddenMatrix;
 
             //NOT NEEDED ~~
             for (int j = 0; j < numHidden; ++j)
@@ -189,7 +203,7 @@ namespace FeedForwardDemo
             }
             //NOT NEEDED ^^
 
-            var hiddenResultMatrix = sumMatrix + HiddenBiasMatrix;
+            hiddenSumMatrix = hiddenSumMatrix + HiddenBiasMatrix;
 
             //NOT NEEDED ~~
             for (int i = 0; i < numHidden; ++i)
@@ -200,28 +214,47 @@ namespace FeedForwardDemo
 
             Console.WriteLine("Pre-activation hidden sums:");
             FeedForwardProgram.ShowVector(hSums, 4, 4, false); // <-- NOT NEEDED
-            FeedForwardProgram.ShowVector(hiddenResultMatrix, 4, 4, true);
+            FeedForwardProgram.ShowVector(hiddenSumMatrix, 4, 4, true);
 
+            HiddenResultsMatrix = new MatrixLite(1, hiddenSumMatrix.ColumnCount);
+            for (int i = 0; i < hiddenSumMatrix.ColumnCount; i++)
+            {
+                HiddenResultsMatrix[i] = HyperTan(hiddenSumMatrix[i]);
+            }
 
+            //NOT NEEDED ~~~~
             for (int i = 0; i < numHidden; ++i)
             {
-                hOutputs[i] = HyperTan(hSums[i]);
+                hResults[i] = HyperTan(hSums[i]);
             }
+            //NOT NEEDED^^^
+
             Console.WriteLine("Hidden outputs:");
-            FeedForwardProgram.ShowVector(hOutputs, 4, 4, true);
+            FeedForwardProgram.ShowVector(hResults, 4, 4, false);
+            FeedForwardProgram.ShowVector(HiddenResultsMatrix, 4, 4, true);
+
+            var outputSumMatrix = HiddenResultsMatrix * HiddenToOutputMatrix;
+
             for (int j = 0; j < numOutput; ++j)
             {
                 for (int i = 0; i < numHidden; ++i)
                 {
-                    oSums[j] += hOutputs[i] * hoWeights[i][j];
+                    oSums[j] += hResults[i] * hoWeights[i][j];
                 }
             }
+
+            outputResultsMatrix = outputSumMatrix + OutputBiasMatrix;
+
             for (int i = 0; i < numOutput; ++i)
             {
                 oSums[i] += oBiases[i];
             }
+
             Console.WriteLine("Pre-activation output sums:");
-            FeedForwardProgram.ShowVector(oSums, 2, 4, true);
+            FeedForwardProgram.ShowVector(oSums, 2, 4, false);
+            FeedForwardProgram.ShowVector(outputResultsMatrix, 2, 4, true);
+
+
             double[] softOut = Softmax(oSums);
             // Softmax does all outputs at once. 
             for (int i = 0; i < outputs.Length; ++i)
@@ -302,6 +335,9 @@ namespace FeedForwardDemo
             SetValues(weights, offset);
         }
 
+        public MatrixLite(double[] weights):this(weights, 1, weights.Length, 0)
+        { }
+
         public static MatrixLite operator *(MatrixLite operandOne, MatrixLite operandTwo)
         {
             MatrixLite firstOperand;
@@ -356,7 +392,7 @@ namespace FeedForwardDemo
             return A;
         }
 
-        public static implicit operator double[](MatrixLite operatorOne)
+        public static implicit operator double[] (MatrixLite operatorOne)
         {
             if (operatorOne.RowCount > 1)
             {
