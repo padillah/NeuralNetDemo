@@ -1,4 +1,10 @@
 ﻿using System;
+using System.CodeDom;
+using System.Collections;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
+using System.Runtime.Remoting;
 
 namespace FeedForwardDemo
 {
@@ -23,6 +29,10 @@ namespace FeedForwardDemo
 
         public MatrixLite(double[] weights)
             : this(weights, 1, weights.Length, 0)
+        {
+        }
+        public MatrixLite(VectorLite weights)
+    : this(weights, 1, weights.Length, 0)
         {
         }
 
@@ -185,6 +195,12 @@ namespace FeedForwardDemo
             return responseMatrix;
         }
 
+        public static MatrixLite operator *(VectorLite operandOne, MatrixLite operandTwo)
+        {
+            var newOperand = new MatrixLite(operandOne);
+            return newOperand * operandTwo;
+        }
+
         public static MatrixLite operator +(MatrixLite A, MatrixLite B)
         {
             if ((A.RowCount != B.RowCount) || (A.ColumnCount != B.ColumnCount))
@@ -203,7 +219,7 @@ namespace FeedForwardDemo
             return A;
         }
 
-        public static implicit operator double[] (MatrixLite operatorOne)
+        public static implicit operator double[](MatrixLite operatorOne)
         {
             if (operatorOne.RowCount > 1)
             {
@@ -247,14 +263,14 @@ namespace FeedForwardDemo
         /// </summary>
         /// <param name="rowIndex"></param>
         /// <returns>rowIndex-th row...</returns>
-        public MatrixLite Row(int rowIndex)
+        public VectorLite Row(int rowIndex)
         {
             if ((rowIndex < 0) || (rowIndex > RowCount))
             {
                 throw new ArgumentException("Index exceed matrix dimension.");
             }
 
-            MatrixLite buf = new MatrixLite(ColumnCount, 1);
+            VectorLite buf = new VectorLite(ColumnCount);
 
             for (int j = 0; j < ColumnCount; j++)
             {
@@ -264,7 +280,7 @@ namespace FeedForwardDemo
             return buf;
         }
 
-        public void SetValues(double[] weights, int offset)
+        public void SetValues(VectorLite weights, int offset)
         {
             int weightIndex = offset; // Pointer into array.
 
@@ -314,6 +330,69 @@ namespace FeedForwardDemo
             }
 
             return buf;
+        }
+    }
+
+    public class VectorLite : IEnumerable<double>
+    {
+        private double[] vectorValues;
+
+        public VectorLite(params double[] data)
+        {
+            vectorValues = data;
+        }
+
+        public VectorLite(int columnCount)
+        {
+            vectorValues = new double[columnCount];
+        }
+
+        public static implicit operator double[](VectorLite firstOperator)
+        {
+            return firstOperator.vectorValues;
+        }
+
+        public double this[int index]
+        {
+            get
+            {
+                return vectorValues[index];
+            }
+
+            set
+            {
+                vectorValues[index] = value;
+            }
+        }
+
+        public void Add(double value)
+        {
+            double[] tempValues;
+            if (vectorValues == null)
+            {
+                vectorValues = new double[1];
+            }
+            else
+            {
+                tempValues = new double[vectorValues.Length + 1];
+            }
+
+            tempValues = vectorValues;
+
+            tempValues[tempValues.Length] = value;
+
+            vectorValues = tempValues;
+        }
+
+        public int Length => vectorValues.Length;
+        public IEnumerator<double> GetEnumerator()
+        {
+            return ((IEnumerable<double>)vectorValues).GetEnumerator();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
         }
     }
 }

@@ -6,14 +6,14 @@ namespace FeedForwardDemo
     {
         private readonly double[] hBiases;
         private readonly MatrixLite HiddenBiasMatrix;
-        private MatrixLite HiddenResultsMatrix;
+        private VectorLite HiddenResultsMatrix;
         private readonly MatrixLite HiddenToOutputMatrix;
         private readonly double[][] hoWeights;
         private readonly double[] hResults;
         private readonly double[][] ihWeights;
         private readonly double[] inputs;
 
-        private MatrixLite inputsMatrix;
+        private VectorLite inputsMatrix;
         private readonly MatrixLite inputToHiddenMatrix;
         private readonly int numHidden;
         private readonly int numInput;
@@ -39,7 +39,7 @@ namespace FeedForwardDemo
             HiddenBiasMatrix = new MatrixLite(1, numHidden);
 
             hResults = new double[numHidden];
-            HiddenResultsMatrix = new MatrixLite(1, numHidden);
+            HiddenResultsMatrix = new VectorLite(numHidden);
 
             hoWeights = MakeMatrix(numHidden, numOutput);
             HiddenToOutputMatrix = new MatrixLite(numHidden, numOutput);
@@ -61,7 +61,7 @@ namespace FeedForwardDemo
             return result;
         }
 
-        public void SetWeights(double[] weights)
+        public void SetWeights(VectorLite weights)
         {
             int numWeights = numInput * numHidden + numHidden + numHidden * numOutput + numOutput;
             if (weights.Length != numWeights)
@@ -112,17 +112,16 @@ namespace FeedForwardDemo
             }
         }
 
-        public double[] ComputeOutputs(double[] xValues)
+        public VectorLite ComputeOutputs(VectorLite xValues)
         {
             if (xValues.Length != numInput)
             {
                 throw new Exception("Bad xValues array");
             }
 
-            double[] hSums = new double[numHidden];
-            double[] oSums = new double[numOutput];
+            VectorLite oSums = new VectorLite(numOutput);
 
-            inputsMatrix = new MatrixLite(xValues);
+            inputsMatrix = new VectorLite(xValues);
             for (int i = 0; i < xValues.Length; ++i)
             {
                 inputs[i] = xValues[i];
@@ -138,10 +137,10 @@ namespace FeedForwardDemo
             Console.WriteLine("Pre-activation hidden sums:");
             FeedForwardProgram.ShowVector(hiddenSumMatrix, 4, true);
 
-            HiddenResultsMatrix = new MatrixLite(1, hiddenSumMatrix.ColumnCount);
-            for (int i = 0; i < hiddenSumMatrix.ColumnCount; i++)
+            HiddenResultsMatrix = new VectorLite(hiddenSumMatrix.Length);
+            foreach (double currentValue in hiddenSumMatrix)
             {
-                HiddenResultsMatrix[i] = HyperTan(hiddenSumMatrix[i]);
+                HiddenResultsMatrix.Add(HyperTan(currentValue));
             }
 
             Console.WriteLine("Hidden outputs:");
@@ -149,7 +148,7 @@ namespace FeedForwardDemo
 
             MatrixLite outputSumMatrix = HiddenResultsMatrix * HiddenToOutputMatrix;
 
-           outputResultsMatrix = outputSumMatrix + OutputBiasMatrix;
+            outputResultsMatrix = outputSumMatrix + OutputBiasMatrix;
 
             for (int i = 0; i < numOutput; ++i)
             {
@@ -160,7 +159,7 @@ namespace FeedForwardDemo
             FeedForwardProgram.ShowVector(outputResultsMatrix, 4, true);
 
 
-            double[] softOut = Softmax(oSums);
+            VectorLite softOut = Softmax(oSums);
             MatrixLite softOutMatrix = Softmax(outputResultsMatrix);
             FeedForwardProgram.ShowVector(softOutMatrix, 4, true);
 
@@ -180,7 +179,7 @@ namespace FeedForwardDemo
             return Math.Tanh(v);
         }
 
-        public static double[] Softmax(double[] oSums)
+        public static VectorLite Softmax(VectorLite oSums)
         {
             // Does all output nodes at once. // Determine max oSum. 
             double max = oSums[0];
@@ -196,11 +195,11 @@ namespace FeedForwardDemo
             {
                 scale += Math.Exp(oSums[i] - max);
             }
-            double[] result = new double[oSums.Length];
+
+            VectorLite result = new VectorLite(oSums.Length);
             for (int i = 0; i < oSums.Length; ++i)
             {
-                result[i] =
-                    Math.Exp(oSums[i] - max) / scale;
+                result[i] = Math.Exp(oSums[i] - max) / scale;
             }
             return result; // Now scaled so that xi sums to 1.0. 
         }
@@ -229,13 +228,12 @@ namespace FeedForwardDemo
                 scale += Math.Exp(oSums[i] - max);
             }
 
-            MatrixLite result = new MatrixLite(1,oSums.ColumnCount);
+            MatrixLite result = new MatrixLite(1, oSums.ColumnCount);
             for (int i = 0; i < oSums.ColumnCount; ++i)
             {
                 result[i] = Math.Exp(oSums[i] - max) / scale;
             }
             return result; // Now scaled so that xi sums to 1.0. 
         }
-
     }
 }
