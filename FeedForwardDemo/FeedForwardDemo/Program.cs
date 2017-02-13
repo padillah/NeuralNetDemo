@@ -13,7 +13,7 @@ namespace FeedForwardDemo
 
             Console.WriteLine("Creating a 3-4-2 tanh-softmax neural network");
             NeuralNetwork nn = new NeuralNetwork(numInput, numHidden, numOutput);
-            double[] weights =
+            VectorLite weights = new VectorLite()
             {
                 0.01, 0.02, 0.03,
                 0.04, 0.05, 0.06,
@@ -30,13 +30,14 @@ namespace FeedForwardDemo
             ShowVector(weights, 2, true);
             nn.SetWeights(weights);
 
-            double[] xValues = { 1.0, 2.0, 3.0 };
+            VectorLite xValues = new VectorLite()
+            { 1.0, 2.0, 3.0 };
 
             Console.WriteLine("Inputs are:");
             ShowVector(xValues, 1, true);
 
             Console.WriteLine("Computing outputs");
-            double[] yValues = nn.ComputeOutputs(xValues);
+            VectorLite yValues = nn.ComputeOutputs(xValues);
 
             Console.WriteLine("Outputs computed");
 
@@ -47,7 +48,7 @@ namespace FeedForwardDemo
             Console.ReadLine();
         } // Main
 
-        public static void ShowVector(double[] vectors, int precision, bool newLine)
+        public static void ShowVector(VectorLite vectors, int precision, bool newLine)
         {
             foreach (double currentVector in vectors)
             {

@@ -1,27 +1,35 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 
 namespace FeedForwardDemo
 {
     public class MatrixLite
     {
-        private readonly double[,] matrixValues;
+        private readonly double[,] _matrixValues;
 
         public MatrixLite(int rows, int cols)
         {
             RowCount = rows;
             ColumnCount = cols;
 
-            matrixValues = new double[rows, cols];
+            _matrixValues = new double[rows, cols];
         }
 
         //Need ctor, Multiply, and Coalesce
         public MatrixLite(double[] weights, int rows, int cols, int offset)
             : this(rows, cols)
         {
-            SetValues(weights, offset);
+            var newWeights = new VectorLite(weights);
+            SetValues(newWeights, offset);
         }
 
         public MatrixLite(double[] weights)
+            : this(weights, 1, weights.Length, 0)
+        {
+        }
+
+        public MatrixLite(VectorLite weights)
             : this(weights, 1, weights.Length, 0)
         {
         }
@@ -30,7 +38,7 @@ namespace FeedForwardDemo
 
         public int RowCount { get; }
 
-        public virtual double this[int rowIndex]
+        public double this[int rowIndex]
         {
             set
             {
@@ -49,7 +57,7 @@ namespace FeedForwardDemo
                     //    columnCount = rowIndex;
                     //}
 
-                    matrixValues[0, rowIndex] = value;
+                    _matrixValues[0, rowIndex] = value;
                 }
                 else if (ColumnCount == 1)
                 {
@@ -70,7 +78,7 @@ namespace FeedForwardDemo
                     //    rowCount = rowIndex; // ha!
                     //}
 
-                    matrixValues[rowIndex, 0] = value;
+                    _matrixValues[rowIndex, 0] = value;
                 }
                 else
                 {
@@ -81,25 +89,29 @@ namespace FeedForwardDemo
             {
                 if (RowCount == 1) // row vectors
                 {
-                    return matrixValues[0, rowIndex];
+                    return _matrixValues[0, rowIndex];
                 }
 
                 if (ColumnCount == 1) // coumn vectors
                 {
-                    return matrixValues[rowIndex, 0];
+                    return _matrixValues[rowIndex, 0];
                 }
 
                 throw new InvalidOperationException("General matrix acces requires double indexing.");
             }
         }
 
-        public virtual double this[int rowIndex, int columnIndex]
+        public double this[int rowIndex, int columnIndex]
         {
             set
             {
-                if ((rowIndex < 0) || (columnIndex < 0))
+                if (rowIndex < 0)
                 {
-                    throw new ArgumentOutOfRangeException("Indices must be real positive.");
+                    throw new ArgumentOutOfRangeException(nameof(rowIndex), "Indices must be real positive.");
+                }
+                if (columnIndex < 0)
+                {
+                    throw new ArgumentOutOfRangeException(nameof(columnIndex), "Indices must be real positive.");
                 }
 
                 //TODO: Implement dynamic sizing
@@ -135,44 +147,37 @@ namespace FeedForwardDemo
                 //    columnCount = columnIndex;
                 //}
 
-                matrixValues[rowIndex, columnIndex] = value;
+                _matrixValues[rowIndex, columnIndex] = value;
             }
 
             get
             {
-                if ((rowIndex >= 0) && (rowIndex < RowCount) && (columnIndex >= 0) && (columnIndex < ColumnCount))
+                if ((rowIndex >= 0) && (rowIndex < RowCount))
                 {
-                    return matrixValues[rowIndex, columnIndex];
+                    if ((columnIndex >= 0) && (columnIndex < ColumnCount))
+                    {
+                        return _matrixValues[rowIndex, columnIndex];
+                    }
+                    else
+                    {
+                        throw new ArgumentOutOfRangeException(nameof(columnIndex), "Indices must not exceed size of matrix.");
+                    }
                 }
-
-                throw new ArgumentOutOfRangeException("Indices must not exceed size of matrix.");
+                else
+                {
+                    throw new ArgumentOutOfRangeException(nameof(rowIndex), "Indices must not exceed size of matrix.");
+                }
             }
         }
 
-        public static MatrixLite operator *(MatrixLite operandOne, MatrixLite operandTwo)
+        public static MatrixLite operator *(MatrixLite firstOperand, MatrixLite secondOperand)
         {
-            MatrixLite firstOperand;
-            MatrixLite secondOperand;
-            MatrixLite responseMatrix;
-
-            //This checks the two matrices have compatible dimentions
-            if (operandOne.ColumnCount != operandTwo.RowCount)
+            if (firstOperand.ColumnCount != secondOperand.RowCount)
             {
-                if (operandTwo.ColumnCount != operandOne.RowCount)
-                {
-                    throw new ArithmeticException($"Incompatible matrices. Cannot multiply {operandOne.RowCount} x {operandOne.ColumnCount} matrix and {operandTwo.RowCount} x {operandTwo.ColumnCount} matix.");
-                }
-
-                firstOperand = operandTwo;
-                secondOperand = operandOne;
-            }
-            else
-            {
-                firstOperand = operandOne;
-                secondOperand = operandTwo;
+                throw new ArgumentException("The columns of the first matrix/vector must equal the rows of the second matrix/vector.", nameof(firstOperand));
             }
 
-            responseMatrix = new MatrixLite(firstOperand.RowCount, secondOperand.ColumnCount);
+            MatrixLite responseMatrix = new MatrixLite(firstOperand.RowCount, secondOperand.ColumnCount);
 
             for (int i = 0; i < firstOperand.RowCount; i++)
             {
@@ -185,25 +190,31 @@ namespace FeedForwardDemo
             return responseMatrix;
         }
 
-        public static MatrixLite operator +(MatrixLite A, MatrixLite B)
+        public static VectorLite operator *(VectorLite operandOne, MatrixLite operandTwo)
         {
-            if ((A.RowCount != B.RowCount) || (A.ColumnCount != B.ColumnCount))
+            var newOperand = new MatrixLite(operandOne);
+            return (newOperand * operandTwo).Row(0);
+        }
+
+        public static MatrixLite operator +(MatrixLite firstOperand, MatrixLite secondOperand)
+        {
+            if ((firstOperand.RowCount != secondOperand.RowCount) || (firstOperand.ColumnCount != secondOperand.ColumnCount))
             {
                 throw new ArgumentException("Matrices must be of the same dimension.");
             }
 
-            for (int i = 0; i < A.RowCount; i++)
+            for (int i = 0; i < firstOperand.RowCount; i++)
             {
-                for (int j = 0; j < A.ColumnCount; j++)
+                for (int j = 0; j < firstOperand.ColumnCount; j++)
                 {
-                    A[i, j] += B[i, j];
+                    firstOperand[i, j] += secondOperand[i, j];
                 }
             }
 
-            return A;
+            return firstOperand;
         }
 
-        public static implicit operator double[] (MatrixLite operatorOne)
+        public static implicit operator double[](MatrixLite operatorOne)
         {
             if (operatorOne.RowCount > 1)
             {
@@ -214,15 +225,10 @@ namespace FeedForwardDemo
 
             for (int j = 0; j < operatorOne.ColumnCount; j++)
             {
-                buf[j] = operatorOne.matrixValues[0, j];
+                buf[j] = operatorOne._matrixValues[0, j];
             }
 
             return buf;
-        }
-
-        private void SetValue(int row, int column, double value)
-        {
-            matrixValues[row, column] = value;
         }
 
         /// <summary>
@@ -230,13 +236,13 @@ namespace FeedForwardDemo
         /// </summary>
         /// <param name="columnIndex"></param>
         /// <returns>columnIndex-th column...</returns>
-        public MatrixLite Column(int columnIndex)
+        public VectorLite Column(int columnIndex)
         {
-            MatrixLite buf = new MatrixLite(RowCount, 1);
+            VectorLite buf = new VectorLite(RowCount);
 
             for (int i = 0; i < RowCount; i++)
             {
-                buf[i] = matrixValues[i, columnIndex];
+                buf[i] = _matrixValues[i, columnIndex];
             }
 
             return buf;
@@ -247,34 +253,34 @@ namespace FeedForwardDemo
         /// </summary>
         /// <param name="rowIndex"></param>
         /// <returns>rowIndex-th row...</returns>
-        public MatrixLite Row(int rowIndex)
+        public VectorLite Row(int rowIndex)
         {
             if ((rowIndex < 0) || (rowIndex > RowCount))
             {
                 throw new ArgumentException("Index exceed matrix dimension.");
             }
 
-            MatrixLite buf = new MatrixLite(ColumnCount, 1);
+            VectorLite buf = new VectorLite(ColumnCount);
 
             for (int j = 0; j < ColumnCount; j++)
             {
-                buf[j] = matrixValues[rowIndex, j];
+                buf[j] = _matrixValues[rowIndex, j];
             }
 
             return buf;
         }
 
-        public void SetValues(double[] weights, int offset)
+        public void SetValues(VectorLite weights, int offset)
         {
             int weightIndex = offset; // Pointer into array.
 
-            for (int rowIndex = 0; rowIndex < matrixValues.GetLength(0); rowIndex++)
+            for (int rowIndex = 0; rowIndex < _matrixValues.GetLength(0); rowIndex++)
             {
-                for (int colIndex = 0; colIndex < matrixValues.GetLength(1); ++colIndex)
+                for (int colIndex = 0; colIndex < _matrixValues.GetLength(1); ++colIndex)
                 {
                     //Set the Input to Hidden weight
                     Console.WriteLine($"Row {rowIndex} Column {colIndex} = {weights[weightIndex]}");
-                    matrixValues[rowIndex, colIndex] = weights[weightIndex++];
+                    _matrixValues[rowIndex, colIndex] = weights[weightIndex++];
                 }
             }
         }
@@ -292,10 +298,10 @@ namespace FeedForwardDemo
             return Math.Max(ColumnCount, RowCount);
         }
 
-        public static double Dot(MatrixLite operandOne, MatrixLite operandTwo)
+        public static double Dot(VectorLite operandOne, VectorLite operandTwo)
         {
-            int m = operandOne.VectorLength();
-            int n = operandTwo.VectorLength();
+            int m = operandOne.Length;
+            int n = operandTwo.Length;
 
             if ((m == 0) || (n == 0))
             {
@@ -314,6 +320,92 @@ namespace FeedForwardDemo
             }
 
             return buf;
+        }
+    }
+
+    public class VectorLite : IEnumerable<double>
+    {
+        private double[] _vectorValues;
+
+        public VectorLite(params double[] data)
+        {
+            _vectorValues = data;
+        }
+
+        public VectorLite(int columnCount)
+        {
+            _vectorValues = new double[columnCount];
+        }
+
+        public static implicit operator double[](VectorLite firstOperator)
+        {
+            return firstOperator._vectorValues;
+        }
+
+        public double this[int index]
+        {
+            get { return _vectorValues[index]; }
+
+            set { _vectorValues[index] = value; }
+        }
+
+        public void Add(double value)
+        {
+            double[] tempValues;
+            if (_vectorValues.Length == 0)
+            {
+                _vectorValues = new double[1];
+                tempValues = new double[1];
+            }
+            else
+            {
+                tempValues = new double[_vectorValues.Length + 1];
+            }
+
+            Array.Copy(_vectorValues, tempValues, _vectorValues.Length);
+
+            tempValues[tempValues.Length - 1] = value;
+
+            _vectorValues = tempValues;
+        }
+
+        public int Length => _vectorValues.Length;
+
+        public IEnumerator<double> GetEnumerator()
+        {
+            return ((IEnumerable<double>)_vectorValues).GetEnumerator();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
+        }
+
+        public void SetValues(VectorLite weights, int offset)
+        {
+            int weightIndex = offset; // Pointer into array.
+
+            for (int rowIndex = 0; rowIndex < _vectorValues.GetLength(0); rowIndex++)
+            {
+                //Set the Input to Hidden weight
+                Console.WriteLine($"Row {rowIndex} = {weights[weightIndex]}");
+                _vectorValues[rowIndex] = weights[weightIndex++];
+            }
+        }
+
+        public static VectorLite operator +(VectorLite firstOperand, VectorLite secondOperand)
+        {
+            if (firstOperand.Length != secondOperand.Length)
+            {
+                throw new ArgumentException("Vectors must be of the same dimension.");
+            }
+
+            for (int j = 0; j < firstOperand.Length; j++)
+            {
+                firstOperand[j] += secondOperand[j];
+            }
+
+            return firstOperand;
         }
     }
 }
