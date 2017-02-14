@@ -141,36 +141,37 @@ namespace FeedForwardDemo
             return result; // Now scaled so that xi sums to 1.0. 
         }
 
-        public static MatrixLite Softmax(MatrixLite oSums)
-        {
-            //Make sure this is a one-dimensional matrix
-            if (oSums.RowCount != 1)
-            {
-                throw new InvalidOperationException("Sofmax requires a one-dimentional matrix.");
-            }
+        //public static MatrixLite Softmax(MatrixLite oSums)
+        //{
+        //    //Make sure this is a one-dimensional matrix
+        //    if (oSums.RowCount != 1)
+        //    {
+        //        throw new InvalidOperationException("Sofmax requires a one-dimentional matrix.");
+        //    }
 
-            // Does all output nodes at once. // Determine max oSum. 
-            double max = oSums[0];
-            for (int i = 0; i < oSums.ColumnCount; ++i)
-            {
-                if (oSums[i] > max)
-                {
-                    max = oSums[i]; // Determine scaling factor -- sum of exp( each val - max).
-                }
-            }
+        //    // Does all output nodes at once. // Determine max oSum. 
+        //    double max = oSums[0];
+        //    for (int i = 0; i < oSums.ColumnCount; ++i)
+        //    {
+        //        if (oSums[i] > max)
+        //        {
+        //            max = oSums[i]; // Determine scaling factor -- sum of exp( each val - max).
+        //        }
+        //    }
 
-            double scale = 0.0;
-            for (int i = 0; i < oSums.ColumnCount; ++i)
-            {
-                scale += Math.Exp(oSums[i] - max);
-            }
+        //    double scale = 0.0;
+        //    for (int i = 0; i < oSums.ColumnCount; ++i)
+        //    {
+        //        scale += Math.Exp(oSums[i] - max);
+        //    }
 
-            MatrixLite result = new MatrixLite(1, oSums.ColumnCount);
-            for (int i = 0; i < oSums.ColumnCount; ++i)
-            {
-                result[i] = Math.Exp(oSums[i] - max) / scale;
-            }
-            return result; // Now scaled so that xi sums to 1.0. 
-        }
+        //    MatrixLite result = new MatrixLite(1, oSums.ColumnCount);
+        //    for (int i = 0; i < oSums.ColumnCount; ++i)
+        //    {
+        //        result[i] = Math.Exp(oSums[i] - max) / scale;
+        //    }
+        //    return result; // Now scaled so that xi sums to 1.0. 
+        //}
+
     }
 }
