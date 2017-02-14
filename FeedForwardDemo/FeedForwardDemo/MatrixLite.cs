@@ -38,66 +38,23 @@ namespace FeedForwardDemo
 
         public int RowCount { get; }
 
-        public double this[int rowIndex]
+        public VectorLite this[int rowIndex]
         {
             set
             {
-                if (RowCount == 1)
+                for (int index = 0; index < value.Length; index++)
                 {
-                    // row vectors
-
-                    //TODO: Implement dynamic expansion
-                    // dynamically extend vectors if necessary
-                    //if (rowIndex > ColumnCount)
-                    //{
-                    //    // dynamically add columnIndex-Cols columns to each row
-                    //    for (int t = 0; t < rowIndex - ColumnCount; t++)
-                    //        ((ArrayList)Values[0]).Add(Complex.Zero);
-
-                    //    columnCount = rowIndex;
-                    //}
-
-                    _matrixValues[0, rowIndex] = value;
-                }
-                else if (ColumnCount == 1)
-                {
-                    // column vectors
-
-                    //TODO: Implement dynamic expansion
-                    //if (rowIndex > RowCount)
-                    //{
-                    //    // dynamically add rowIndex-Rows new rows...
-                    //    for (int k = 0; k < rowIndex - rowCount; k++)
-                    //    {
-                    //        this.Values.Add(new ArrayList(columnCount));
-
-                    //        // ...with one column each
-                    //        ((ArrayList)Values[rowCount + k]).Add(Complex.Zero);
-                    //    }
-
-                    //    rowCount = rowIndex; // ha!
-                    //}
-
-                    _matrixValues[rowIndex, 0] = value;
-                }
-                else
-                {
-                    throw new InvalidOperationException("Cannot access multidimensional matrix via single index.");
+                    _matrixValues[rowIndex, index] = value[index];
                 }
             }
             get
             {
-                if (RowCount == 1) // row vectors
+                VectorLite result = new VectorLite(_matrixValues.GetLength(rowIndex));
+                for (int index = 0; index < result.Length; index++)
                 {
-                    return _matrixValues[0, rowIndex];
+                    result[index] = _matrixValues[rowIndex, index];
                 }
-
-                if (ColumnCount == 1) // coumn vectors
-                {
-                    return _matrixValues[rowIndex, 0];
-                }
-
-                throw new InvalidOperationException("General matrix acces requires double indexing.");
+                return result;
             }
         }
 
